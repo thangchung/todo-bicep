@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  todo-app:
+    image: ghcr.io/thangchung/todo-bicep/todo-container:0.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__db=Server=postgresql;Port=5432;Database=postgres;User Id=postgres;Password=P@ssw0rd;
+    ports:
+      - "5000:80"
+    depends_on:
+      - postgresql
+    networks:
+      - todo-network
+  
+  postgresql:
+    image: postgres:14.1-alpine
+    container_name: postgresql
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=P@ssw0rd
+    ports:
+      - "5432:5432"
+    networks:
+      - todo-network
+
+networks:
+  todo-network:

@@ -1,0 +1,3 @@
+auth:
+  postgresPassword: P@ssw0rd
+  database: postgres
