@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var config = builder.Configuration;
+
 const string corsName = "mycors";
 builder.Services.AddCors(options => 
     options.AddPolicy(corsName, policy => { policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); }));
@@ -10,14 +12,26 @@ builder.Services.AddCors(options =>
 var connectionString = builder.Configuration.GetConnectionString("db");
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddDbContext<TodoDbContext>(options => 
-    options.UseNpgsql(connectionString, sqlOptions =>
-    {
-        sqlOptions.MigrationsAssembly(typeof(TodoDbContext).Assembly.GetName().Name);
-        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-    })
-    .UseSnakeCaseNamingConvention())
-    .AddDatabaseDeveloperPageExceptionFilter();
+
+if (config.GetValue("UseSqlLite", false))
+{
+    const Environment.SpecialFolder folder = Environment.SpecialFolder.LocalApplicationData;
+    var path = Environment.GetFolderPath(folder);
+    var dbPath = Path.Join(path, "todo.db");
+    builder.Services.AddDbContext<TodoDbContext>(options =>
+        options.UseSqlite($"Data Source={dbPath}").UseSnakeCaseNamingConvention());
+}
+else
+{
+    builder.Services.AddDbContext<TodoDbContext>(options =>
+            options.UseNpgsql(connectionString, sqlOptions =>
+                {
+                    sqlOptions.MigrationsAssembly(typeof(TodoDbContext).Assembly.GetName().Name);
+                    sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                })
+                .UseSnakeCaseNamingConvention())
+        .AddDatabaseDeveloperPageExceptionFilter();
+}
 
 builder.Services.AddSwaggerGen();
 
